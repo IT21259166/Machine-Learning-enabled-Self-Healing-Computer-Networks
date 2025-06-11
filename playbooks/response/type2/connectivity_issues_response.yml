@@ -1,0 +1,49 @@
+---
+# Connectivity Issues Response Playbook
+name: Connectivity Issues Response
+description: Playbook for addressing connectivity issues between hosts
+
+responses:
+  - type: routing_repair
+    description: Repair routing table and flush caches
+    commands:
+      - ssh {{ src_ip }} "sudo ip route flush cache"
+      - ssh {{ src_ip }} "sudo ip route add {{ dst_ip }} via $(ip route | grep default | awk '{print $3}')"
+      - ssh {{ src_ip }} "sudo systemctl restart networking"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: firewall_adjustment
+    description: Check and adjust firewall rules that might be blocking traffic
+    commands:
+      - ssh {{ src_ip }} "sudo iptables -L -n | grep {{ dst_ip }}"
+      - ssh {{ src_ip }} "sudo iptables -D INPUT -s {{ dst_ip }} -j DROP 2>/dev/null || true"
+      - ssh {{ src_ip }} "sudo iptables -D OUTPUT -d {{ dst_ip }} -j DROP 2>/dev/null || true"
+      - ssh {{ src_ip }} "sudo iptables -A INPUT -s {{ dst_ip }} -j ACCEPT"
+      - ssh {{ src_ip }} "sudo iptables -A OUTPUT -d {{ dst_ip }} -j ACCEPT"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: dns_resolution
+    description: Fix DNS resolution issues
+    commands:
+      - ssh {{ src_ip }} "sudo systemctl restart systemd-resolved"
+      - ssh {{ src_ip }} "echo 'nameserver 8.8.8.8' | sudo tee -a /etc/resolv.conf"
+      - ssh {{ src_ip }} "echo 'nameserver 8.8.4.4' | sudo tee -a /etc/resolv.conf"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: arp_repair
+    description: Fix ARP table issues
+    commands:
+      - ssh {{ src_ip }} "sudo ip neigh flush dev eth0"
+      - ssh {{ src_ip }} "sudo arping -I eth0 -c 3 {{ dst_ip }}"
+      - ssh {{ src_ip }} "sudo ip neigh add {{ dst_ip }} lladdr $(arp -a | grep {{ dst_ip }} | awk '{print $4}') dev eth0"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: port_unblock
+    description: Check and unblock specific ports that might be blocked
+    commands:
+      - ssh {{ src_ip }} "sudo iptables -L -n | grep {{ dst_port }}"
+      - ssh {{ src_ip }} "sudo iptables -D INPUT -p tcp --dport {{ dst_port }} -j DROP 2>/dev/null || true"
+      - ssh {{ src_ip }} "sudo iptables -D OUTPUT -p tcp --dport {{ dst_port }} -j DROP 2>/dev/null || true"
+      - ssh {{ src_ip }} "sudo iptables -A INPUT -p tcp --dport {{ dst_port }} -j ACCEPT"
+      - ssh {{ src_ip }} "sudo iptables -A OUTPUT -p tcp --dport {{ dst_port }} -j ACCEPT"
+      - ssh {{ src_ip }} "echo success"

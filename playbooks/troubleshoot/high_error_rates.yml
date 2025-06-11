@@ -1,0 +1,46 @@
+---
+# High Error Rates Troubleshooting Playbook
+name: high_error_rates
+description: Playbook for detecting high error rates in network interfaces
+
+commands:
+  - ssh {{ src_ip }} "ifconfig eth0 | grep errors"
+  - ssh {{ src_ip }} "cat /proc/net/dev | grep eth0"
+  - ssh {{ src_ip }} "netstat -s | grep errors"
+  - ssh {{ src_ip }} "dmesg | grep eth0"
+  - ssh {{ src_ip }} "ethtool -S eth0 | grep error"
+
+pattern: "[0-9]+ errors|[0-9]+ dropped|CRC error|collision|fifo|frame errors"
+
+threshold:
+  rx_errors: 10    # count
+  tx_errors: 10    # count
+  crc_errors: 5    # count
+  frame_errors: 5  # count
+  collisions: 5    # count
+
+actions:
+  - check_rx_errors:
+      description: Check if RX errors exceed threshold
+      command: "grep -oP 'RX.*?([0-9]+) errors' | awk '{print $2}'"
+      threshold: "rx_errors"
+
+  - check_tx_errors:
+      description: Check if TX errors exceed threshold
+      command: "grep -oP 'TX.*?([0-9]+) errors' | awk '{print $2}'"
+      threshold: "tx_errors"
+
+  - check_crc_errors:
+      description: Check if CRC errors exceed threshold
+      command: "grep -oP '([0-9]+) CRC' | awk '{print $1}'"
+      threshold: "crc_errors"
+
+  - check_frame_errors:
+      description: Check if frame errors exceed threshold
+      command: "grep -oP '([0-9]+) frame' | awk '{print $1}'"
+      threshold: "frame_errors"
+
+  - check_collisions:
+      description: Check if collisions exceed threshold
+      command: "grep -oP '([0-9]+) collisions' | awk '{print $1}'"
+      threshold: "collisions"

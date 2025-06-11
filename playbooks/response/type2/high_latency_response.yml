@@ -1,0 +1,46 @@
+---
+# High Latency Response Playbook
+name: High Latency Response
+description: Playbook for addressing high latency network issues
+
+responses:
+  - type: route_optimization
+    description: Optimize network routes to reduce latency
+    commands:
+      - ssh {{ src_ip }} "sudo ip route flush cache"
+      - ssh {{ src_ip }} "sudo ip route add {{ dst_ip }} via $(ip route | grep default | awk '{print $3}') metric 1"
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_fastopen=3"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: tcp_tuning
+    description: Adjust TCP parameters for better performance
+    commands:
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_slow_start_after_idle=0"
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_rmem='4096 87380 16777216'"
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_wmem='4096 65536 16777216'"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: buffer_adjustment
+    description: Adjust buffer sizes for improved throughput
+    commands:
+      - ssh {{ src_ip }} "sudo ethtool -G eth0 rx 4096 tx 4096"
+      - ssh {{ src_ip }} "sudo sysctl -w net.core.rmem_max=16777216"
+      - ssh {{ src_ip }} "sudo sysctl -w net.core.wmem_max=16777216"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: congestion_control
+    description: Change TCP congestion control algorithm
+    commands:
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_congestion_control=bbr"
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_notsent_lowat=16384"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: prioritize_traffic
+    description: Prioritize traffic to reduce latency
+    commands:
+      - ssh {{ src_ip }} "sudo tc qdisc add dev eth0 root handle 1: prio"
+      - ssh {{ src_ip }} "sudo tc qdisc add dev eth0 parent 1:1 handle 10: netem delay 5ms"
+      - ssh {{ src_ip }} "sudo tc qdisc add dev eth0 parent 1:2 handle 20: netem delay 10ms"
+      - ssh {{ src_ip }} "sudo tc qdisc add dev eth0 parent 1:3 handle 30: netem delay 15ms"
+      - ssh {{ src_ip }} "sudo tc filter add dev eth0 protocol ip parent 1:0 prio 1 u32 match ip dst {{ dst_ip }} match ip dport {{ dst_port }} 0xffff flowid 1:1"
+      - ssh {{ src_ip }} "echo success"

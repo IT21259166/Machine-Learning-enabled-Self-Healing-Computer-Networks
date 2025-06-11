@@ -1,0 +1,33 @@
+---
+# Flapping Links Troubleshooting Playbook
+name: flapping_links
+description: Playbook for detecting flapping network links
+
+commands:
+  - ssh {{ src_ip }} "dmesg | grep eth0"
+  - ssh {{ src_ip }} "grep eth0 /var/log/syslog | tail -n 100"
+  - ssh {{ src_ip }} "ip -s link show eth0"
+  - ssh {{ src_ip }} "ethtool eth0 | grep 'Link detected'"
+  - ssh {{ src_ip }} "cat /sys/class/net/eth0/carrier_changes"
+
+pattern: "Link is down|Link is up|carrier changed|NIC Link is Up|NIC Link is Down"
+
+threshold:
+  carrier_changes: 5    # count in last 5 minutes
+  link_down_events: 3   # count in last 5 minutes
+
+actions:
+  - check_carrier_changes:
+      description: Check if carrier changes exceed threshold
+      command: "cat /sys/class/net/eth0/carrier_changes"
+      threshold: "carrier_changes"
+
+  - check_link_down_events:
+      description: Check if link down events exceed threshold
+      command: "grep -c 'Link is down' /var/log/syslog"
+      threshold: "link_down_events"
+
+  - check_link_up_events:
+      description: Check if link up events exceed threshold
+      command: "grep -c 'Link is up' /var/log/syslog"
+      threshold: "link_down_events"  # Using same threshold as link_down_events

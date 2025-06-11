@@ -1,0 +1,44 @@
+---
+# Unusual Header Length Response Playbook
+name: Unusual Header Length Response
+description: Playbook for addressing unusual header length anomalies
+
+responses:
+  - type: mtu_adjustment
+    description: Adjust MTU to accommodate larger headers
+    commands:
+      - ssh {{ src_ip }} "sudo ip link set dev eth0 mtu 1500"
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_mtu_probing=1"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: ip_options_filtering
+    description: Filter packets with excessive IP options
+    commands:
+      - ssh {{ src_ip }} "sudo iptables -A INPUT -p tcp --tcp-flags SYN,ACK SYN,ACK -m tcpoptstrip --strip-options timestamp,sack,sackOK,mss -j ACCEPT"
+      - ssh {{ src_ip }} "sudo iptables -A OUTPUT -p tcp --tcp-flags SYN,ACK SYN,ACK -m tcpoptstrip --strip-options timestamp,sack,sackOK,mss -j ACCEPT"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: tcp_optimization
+    description: Optimize TCP settings for header handling
+    commands:
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_timestamps=0"
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_sack=0"
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_window_scaling=0"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: header_compression
+    description: Enable header compression where supported
+    commands:
+      - ssh {{ src_ip }} "sudo modprobe ppp_deflate"
+      - ssh {{ src_ip }} "sudo modprobe ppp_bsdcomp"
+      - ssh {{ src_ip }} "sudo modprobe deflate"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: proxy_configuration
+    description: Configure proxy to handle large headers
+    commands:
+      - ssh {{ src_ip }} "sudo apt-get install -y squid"
+      - ssh {{ src_ip }} "sudo echo 'request_header_max_size 64 KB' >> /etc/squid/squid.conf"
+      - ssh {{ src_ip }} "sudo echo 'reply_header_max_size 64 KB' >> /etc/squid/squid.conf"
+      - ssh {{ src_ip }} "sudo systemctl restart squid"
+      - ssh {{ src_ip }} "echo success"

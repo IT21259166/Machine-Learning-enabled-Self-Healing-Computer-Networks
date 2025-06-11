@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ANBD Debug Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/debug.css') }}">
+</head>
+<body>
+    <header class="debug-header">
+        <h1>ANBD Debug Dashboard</h1>
+        <nav>
+            <a href="/debug">Home</a>
+            <a href="/debug/system">System</a>
+            <a href="/debug/database">Database</a>
+            <a href="/debug/model">Model</a>
+            <a href="/debug/logs">Logs</a>
+        </nav>
+    </header>
+
+    <main class="debug-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="{{ url_for('static', filename='js/debug.js') }}"></script>
+</body>
+</html>

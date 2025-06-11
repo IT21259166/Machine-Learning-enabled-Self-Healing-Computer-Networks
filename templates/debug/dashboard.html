@@ -1,0 +1,49 @@
+{% extends "debug/base.html" %}
+
+{% block title %}Debug Dashboard - ANBD{% endblock %}
+
+{% block content %}
+<div class="debug-dashboard">
+    <div class="section">
+        <h2>System Status</h2>
+        <div id="system-status" class="status-box">
+            <p>Loading...</p>
+        </div>
+        <button onclick="loadSystemStatus()">Refresh</button>
+    </div>
+
+    <div class="section">
+        <h2>Database Status</h2>
+        <div id="database-status" class="status-box">
+            <p>Loading...</p>
+        </div>
+        <button onclick="loadDatabaseStatus()">Refresh</button>
+    </div>
+
+    <div class="section">
+        <h2>Model Status</h2>
+        <div id="model-status" class="status-box">
+            <p>Loading...</p>
+        </div>
+        <button onclick="loadModelStatus()">Refresh</button>
+    </div>
+
+    <div class="section">
+        <h2>Quick Tests</h2>
+        <div class="test-buttons">
+            <button onclick="testPrediction()">Test Prediction</button>
+            <button onclick="testRCA1()">Test RCA Type 1</button>
+            <button onclick="clearDatabase()" class="danger">Clear Database</button>
+        </div>
+        <div id="test-results" class="status-box"></div>
+    </div>
+
+    <div class="section">
+        <h2>Recent Logs</h2>
+        <div id="logs-container" class="logs-box">
+            <p>Loading logs...</p>
+        </div>
+        <button onclick="loadLogs()">Refresh Logs</button>
+    </div>
+</div>
+{% endblock %}

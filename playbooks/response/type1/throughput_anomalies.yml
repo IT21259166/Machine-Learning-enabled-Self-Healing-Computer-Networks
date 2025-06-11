@@ -1,0 +1,47 @@
+---
+# Throughput Anomalies Response Playbook
+name: Throughput Anomalies Response
+description: Playbook for addressing throughput anomalies
+
+responses:
+  - type: buffer_optimization
+    description: Optimize network buffers for better throughput
+    commands:
+      - ssh {{ src_ip }} "sudo sysctl -w net.core.rmem_max=16777216"
+      - ssh {{ src_ip }} "sudo sysctl -w net.core.wmem_max=16777216"
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_rmem='4096 87380 16777216'"
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_wmem='4096 65536 16777216'"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: interrupt_coalescing
+    description: Adjust NIC interrupt coalescing
+    commands:
+      - ssh {{ src_ip }} "sudo ethtool -C eth0 rx-usecs 100 tx-usecs 100"
+      - ssh {{ src_ip }} "sudo ethtool -C eth0 rx-frames 32 tx-frames 32"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: parallel_streams
+    description: Configure parallel TCP streams for better throughput
+    commands:
+      - ssh {{ src_ip }} "sudo iptables -t mangle -A PREROUTING -p tcp -s {{ src_ip }} -d {{ dst_ip }} -j MARK --set-mark 1"
+      - ssh {{ src_ip }} "sudo ip rule add fwmark 1 table 1"
+      - ssh {{ src_ip }} "sudo ip route add default via {{ dst_ip }} table 1"
+      - ssh {{ src_ip }} "sudo ip route flush cache"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: offloading_enable
+    description: Enable hardware offloading features
+    commands:
+      - ssh {{ src_ip }} "sudo ethtool -K eth0 tso on"
+      - ssh {{ src_ip }} "sudo ethtool -K eth0 gso on"
+      - ssh {{ src_ip }} "sudo ethtool -K eth0 gro on"
+      - ssh {{ src_ip }} "sudo ethtool -K eth0 tx on"
+      - ssh {{ src_ip }} "sudo ethtool -K eth0 rx on"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: congestion_algorithm
+    description: Change TCP congestion control algorithm
+    commands:
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_congestion_control=bbr"
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_notsent_lowat=16384"
+      - ssh {{ src_ip }} "echo success"

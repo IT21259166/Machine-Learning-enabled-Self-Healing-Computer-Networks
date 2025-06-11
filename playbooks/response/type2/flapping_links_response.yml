@@ -1,0 +1,44 @@
+---
+# Flapping Links Response Playbook
+name: Flapping Links Response
+description: Playbook for addressing flapping network links
+
+responses:
+  - type: link_stabilization
+    description: Stabilize flapping link by disabling auto-negotiation
+    commands:
+      - ssh {{ src_ip }} "sudo ethtool -s eth0 autoneg off speed 1000 duplex full"
+      - ssh {{ src_ip }} "sudo ethtool -s eth0 wol d"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: energy_efficiency_disable
+    description: Disable energy efficiency features that may cause link flapping
+    commands:
+      - ssh {{ src_ip }} "sudo ethtool --set-eee eth0 eee off"
+      - ssh {{ src_ip }} "sudo ethtool -s eth0 advertise 0x010"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: spanning_tree_adjustment
+    description: Adjust spanning tree parameters to reduce port state changes
+    commands:
+      - ssh {{ src_ip }} "sudo apt-get install -y bridge-utils"
+      - ssh {{ src_ip }} "sudo brctl setportprio br0 eth0 8"
+      - ssh {{ src_ip }} "sudo brctl stp br0 on"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: cable_diagnostic
+    description: Run diagnostics on the cable and recommend replacement if needed
+    commands:
+      - ssh {{ src_ip }} "sudo ethtool -t eth0"
+      - ssh {{ src_ip }} "sudo ethtool --show-eee eth0"
+      - ssh {{ src_ip }} "echo 'Cable diagnostic complete, check logs for details' >> /var/log/anbd/cable_diagnostics.log"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: interface_driver_update
+    description: Update network interface driver
+    commands:
+      - ssh {{ src_ip }} "sudo ethtool -i eth0 | grep driver"
+      - ssh {{ src_ip }} "sudo apt-get update && sudo apt-get install -y linux-image-$(uname -r)"
+      - ssh {{ src_ip }} "sudo modprobe -r $(ethtool -i eth0 | grep driver | awk '{print $2}')"
+      - ssh {{ src_ip }} "sudo modprobe $(ethtool -i eth0 | grep driver | awk '{print $2}')"
+      - ssh {{ src_ip }} "echo success"

@@ -1,0 +1,34 @@
+---
+# High Latency Troubleshooting Playbook
+name: high_latency
+description: Playbook for detecting high latency issues
+
+commands:
+  - ssh {{ src_ip }} "ping -c 5 {{ dst_ip }}"
+  - ssh {{ src_ip }} "traceroute {{ dst_ip }}"
+  - ssh {{ src_ip }} "netstat -s | grep retransmit"
+  - ssh {{ src_ip }} "cat /proc/net/dev | grep eth0"
+  - ssh {{ src_ip }} "iperf -c {{ dst_ip }} -p {{ dst_port }} -t 5"
+
+pattern: "time=[0-9]+.[0-9]+ ms|[0-9]+% packet loss|[0-9]+ retransmit"
+
+threshold:
+  avg_latency: 100  # ms
+  packet_loss: 5    # percent
+  retransmits: 10   # count
+
+actions:
+  - check_ping_time:
+      description: Check if ping time exceeds threshold
+      command: "grep -oP 'time=\K[0-9]+\.[0-9]+' | awk '{ sum += $1 } END { print sum/NR }'"
+      threshold: "avg_latency"
+
+  - check_packet_loss:
+      description: Check if packet loss exceeds threshold
+      command: "grep -oP '[0-9]+(?=% packet loss)'"
+      threshold: "packet_loss"
+
+  - check_retransmits:
+      description: Check if TCP retransmits exceed threshold
+      command: "grep -oP '[0-9]+(?= retransmit)'"
+      threshold: "retransmits"

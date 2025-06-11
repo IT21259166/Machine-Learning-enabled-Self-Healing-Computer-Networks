@@ -1,0 +1,46 @@
+---
+# Bandwidth Saturation Response Playbook
+name: Bandwidth Saturation Response
+description: Playbook for addressing bandwidth saturation anomalies
+
+responses:
+  - type: qos_adjustment
+    description: Adjust QoS settings to prioritize critical traffic
+    commands:
+      - ssh {{ src_ip }} "sudo tc qdisc add dev eth0 root handle 1: htb default 12"
+      - ssh {{ src_ip }} "sudo tc class add dev eth0 parent 1: classid 1:1 htb rate {{ Flow_Bytes/s }}kbit ceil {{ Flow_Bytes/s }}kbit"
+      - ssh {{ src_ip }} "sudo tc class add dev eth0 parent 1:1 classid 1:10 htb rate {{ Flow_Bytes/s }}kbit ceil {{ Flow_Bytes/s }}kbit"
+      - ssh {{ src_ip }} "sudo tc class add dev eth0 parent 1:1 classid 1:11 htb rate {{ Flow_Bytes/s }}kbit ceil {{ Flow_Bytes/s }}kbit"
+      - ssh {{ src_ip }} "sudo tc class add dev eth0 parent 1:1 classid 1:12 htb rate {{ Flow_Bytes/s }}kbit ceil {{ Flow_Bytes/s }}kbit"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: bandwidth_throttling
+    description: Throttle non-essential traffic to free up bandwidth
+    commands:
+      - ssh {{ src_ip }} "sudo wondershaper eth0 {{ Flow_Bytes/s }} {{ Flow_Bytes/s }}"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: tcp_flow_control
+    description: Adjust TCP flow control parameters
+    commands:
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_window_scaling=1"
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_timestamps=1"
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_sack=1"
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_congestion_control=cubic"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: traffic_rate_limiting
+    description: Implement rate limiting for the specific traffic flow
+    commands:
+      - ssh {{ src_ip }} "sudo iptables -A FORWARD -s {{ src_ip }} -d {{ dst_ip }} -p tcp --dport {{ dst_port }} -m limit --limit {{ Flow_Packets/s }}/second -j ACCEPT"
+      - ssh {{ src_ip }} "sudo iptables -A FORWARD -s {{ src_ip }} -d {{ dst_ip }} -p tcp --dport {{ dst_port }} -j DROP"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: prioritize_critical_flow
+    description: Prioritize critical traffic flows over non-essential ones
+    commands:
+      - ssh {{ src_ip }} "sudo iptables -t mangle -A PREROUTING -p tcp -s {{ src_ip }} -d {{ dst_ip }} --dport {{ dst_port }} -j MARK --set-mark 1"
+      - ssh {{ src_ip }} "sudo ip route add default via {{ dst_ip }} table 1"
+      - ssh {{ src_ip }} "sudo ip rule add fwmark 1 table 1"
+      - ssh {{ src_ip }} "sudo ip route flush cache"
+      - ssh {{ src_ip }} "echo success"

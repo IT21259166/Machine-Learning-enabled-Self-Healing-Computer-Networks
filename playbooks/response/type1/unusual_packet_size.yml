@@ -1,0 +1,43 @@
+---
+# Unusual Packet Size Response Playbook
+name: Unusual Packet Size Response
+description: Playbook for addressing unusual packet size anomalies
+
+responses:
+  - type: jumbo_frames
+    description: Enable jumbo frames for large packets
+    commands:
+      - ssh {{ src_ip }} "sudo ip link set dev eth0 mtu 9000"
+      - ssh {{ src_ip }} "sudo ethtool -K eth0 tso on gso on"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: packet_fragmentation
+    description: Configure packet fragmentation settings
+    commands:
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.ip_no_pmtu_disc=1"
+      - ssh {{ src_ip }} "sudo iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: traffic_shaping
+    description: Apply traffic shaping for packet size control
+    commands:
+      - ssh {{ src_ip }} "sudo tc qdisc add dev eth0 root handle 1: htb default 10"
+      - ssh {{ src_ip }} "sudo tc class add dev eth0 parent 1: classid 1:10 htb rate 100Mbit"
+      - ssh {{ src_ip }} "sudo tc filter add dev eth0 protocol ip parent 1:0 prio 1 u32 match ip dst {{ dst_ip }} flowid 1:10"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: mss_clamping
+    description: Apply MSS clamping to control TCP packet sizes
+    commands:
+      - ssh {{ src_ip }} "sudo iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -o eth0 -j TCPMSS --set-mss 1400"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: packet_size_optimization
+    description: Optimize application for specific packet sizes
+    commands:
+      - ssh {{ src_ip }} "sudo sysctl -w net.core.rmem_max=16777216"
+      - ssh {{ src_ip }} "sudo sysctl -w net.core.wmem_max=16777216"
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_rmem='4096 87380 16777216'"
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_wmem='4096 65536 16777216'"
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_moderate_rcvbuf=1"
+      - ssh {{ src_ip }} "echo success"

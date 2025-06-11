@@ -1,0 +1,158 @@
+/* ANBD Debug Dashboard Styles */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background-color: #1a1a1a;
+    color: #00ff00;
+    line-height: 1.4;
+}
+
+.debug-header {
+    background-color: #2d2d2d;
+    padding: 1rem;
+    border-bottom: 2px solid #00ff00;
+}
+
+.debug-header h1 {
+    color: #00ff00;
+    margin-bottom: 0.5rem;
+}
+
+.debug-header nav a {
+    color: #00ff00;
+    text-decoration: none;
+    margin-right: 1rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid transparent;
+}
+
+.debug-header nav a:hover {
+    border-color: #00ff00;
+    background-color: rgba(0, 255, 0, 0.1);
+}
+
+.debug-content {
+    padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.debug-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1rem;
+}
+
+.section {
+    background-color: #2d2d2d;
+    border: 1px solid #404040;
+    border-radius: 4px;
+    padding: 1rem;
+}
+
+.section h2 {
+    color: #00ff00;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.status-box {
+    background-color: #1a1a1a;
+    border: 1px solid #404040;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    font-family: monospace;
+    font-size: 0.9rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.logs-box {
+    background-color: #1a1a1a;
+    border: 1px solid #404040;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    font-family: monospace;
+    font-size: 0.8rem;
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+button {
+    background-color: #2d2d2d;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-family: monospace;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+button:hover {
+    background-color: rgba(0, 255, 0, 0.1);
+}
+
+button.danger {
+    border-color: #ff0000;
+    color: #ff0000;
+}
+
+button.danger:hover {
+    background-color: rgba(255, 0, 0, 0.1);
+}
+
+.test-buttons {
+    margin-bottom: 1rem;
+}
+
+.status-item {
+    margin-bottom: 0.5rem;
+    padding: 0.25rem;
+}
+
+.status-good {
+    color: #00ff00;
+}
+
+.status-warning {
+    color: #ffff00;
+}
+
+.status-error {
+    color: #ff0000;
+}
+
+.metric {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.25rem 0;
+    border-bottom: 1px dotted #404040;
+}
+
+.metric:last-child {
+    border-bottom: none;
+}
+
+pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+@media (max-width: 768px) {
+    .debug-dashboard {
+        grid-template-columns: 1fr;
+    }
+
+    .debug-header nav a {
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+}

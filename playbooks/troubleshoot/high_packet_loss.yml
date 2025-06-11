@@ -1,0 +1,39 @@
+---
+# High Packet Loss Troubleshooting Playbook
+name: high_packet_loss
+description: Playbook for detecting high packet loss in network
+
+commands:
+  - ssh {{ src_ip }} "ping -c 20 {{ dst_ip }}"
+  - ssh {{ src_ip }} "mtr -n -c 10 {{ dst_ip }}"
+  - ssh {{ src_ip }} "netstat -s | grep segments"
+  - ssh {{ src_ip }} "tc -s qdisc show dev eth0"
+  - ssh {{ src_ip }} "ifconfig eth0 | grep dropped"
+
+pattern: "[0-9]+% packet loss|[0-9]+% loss|[0-9]+ dropped|segments retransmitted"
+
+threshold:
+  packet_loss: 5       # percent
+  segment_retransmit: 10  # count
+  drops: 100           # count
+
+actions:
+  - check_ping_loss:
+      description: Check if ping packet loss exceeds threshold
+      command: "grep -oP '[0-9]+(?=% packet loss)'"
+      threshold: "packet_loss"
+
+  - check_mtr_loss:
+      description: Check if MTR shows loss exceeding threshold
+      command: "grep -oP '[0-9]+\.[0-9]+(?=%)'"
+      threshold: "packet_loss"
+
+  - check_segments_retransmitted:
+      description: Check if segments retransmitted exceeds threshold
+      command: "grep -oP '([0-9]+) segments retransmitted' | awk '{print $1}'"
+      threshold: "segment_retransmit"
+
+  - check_interface_drops:
+      description: Check if interface drops exceeds threshold
+      command: "grep -oP '([0-9]+) dropped' | awk '{print $1}'"
+      threshold: "drops"

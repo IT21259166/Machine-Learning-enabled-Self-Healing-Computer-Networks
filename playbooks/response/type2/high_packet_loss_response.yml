@@ -1,0 +1,46 @@
+---
+# High Packet Loss Response Playbook
+name: High Packet Loss Response
+description: Playbook for addressing high packet loss in network
+
+responses:
+  - type: queue_management
+    description: Optimize queue management to reduce packet loss
+    commands:
+      - ssh {{ src_ip }} "sudo sysctl -w net.core.netdev_max_backlog=5000"
+      - ssh {{ src_ip }} "sudo tc qdisc del dev eth0 root 2>/dev/null || true"
+      - ssh {{ src_ip }} "sudo tc qdisc add dev eth0 root fq_codel"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: congestion_control
+    description: Change TCP congestion control algorithm to handle packet loss better
+    commands:
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_congestion_control=cubic"
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_slow_start_after_idle=0"
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_early_retrans=1"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: path_mtu_discovery
+    description: Adjust path MTU discovery to prevent black hole detection
+    commands:
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.tcp_mtu_probing=1"
+      - ssh {{ src_ip }} "sudo sysctl -w net.ipv4.ip_no_pmtu_disc=1"
+      - ssh {{ src_ip }} "sudo ip route flush cache"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: packet_pacing
+    description: Enable packet pacing to reduce bursts and packet loss
+    commands:
+      - ssh {{ src_ip }} "sudo sysctl -w net.core.default_qdisc=fq"
+      - ssh {{ src_ip }} "sudo tc qdisc replace dev eth0 root fq pacing"
+      - ssh {{ src_ip }} "sudo tc qdisc show dev eth0"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: error_correction_enable
+    description: Enable forward error correction where available
+    commands:
+      - ssh {{ src_ip }} "sudo ethtool -K eth0 rx on tx on"
+      - ssh {{ src_ip }} "sudo ethtool -K eth0 rxvlan on txvlan on"
+      - ssh {{ src_ip }} "sudo modprobe bonding mode=active-backup miimon=100"
+      - ssh {{ src_ip }} "echo 'FEC enabled, check for hardware support' >> /var/log/anbd/fec_status.log"
+      - ssh {{ src_ip }} "echo success"

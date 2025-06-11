@@ -1,0 +1,43 @@
+---
+# High Error Rates Response Playbook
+name: High Error Rates Response
+description: Playbook for addressing high error rates in network interfaces
+
+responses:
+  - type: interface_reset
+    description: Reset network interface to clear error conditions
+    commands:
+      - ssh {{ src_ip }} "sudo ip link set eth0 down"
+      - ssh {{ src_ip }} "sudo ip link set eth0 up"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: speed_duplex_adjustment
+    description: Adjust interface speed and duplex settings to reduce errors
+    commands:
+      - ssh {{ src_ip }} "sudo ethtool -s eth0 speed 1000 duplex full autoneg off"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: error_correction
+    description: Enable error correction features
+    commands:
+      - ssh {{ src_ip }} "sudo ethtool -K eth0 rx on tx on"
+      - ssh {{ src_ip }} "sudo ethtool -K eth0 rxvlan on txvlan on"
+      - ssh {{ src_ip }} "sudo ethtool -K eth0 scatter-gather on"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: bad_cable_check
+    description: Check and log cable quality issues
+    commands:
+      - ssh {{ src_ip }} "sudo ethtool eth0 | grep -E 'Speed|Duplex|Link|Transceiver'"
+      - ssh {{ src_ip }} "sudo ethtool -d eth0 | grep -E 'PHY|Power|Signal'"
+      - ssh {{ src_ip }} "echo 'Potential cable issue detected, manual intervention required' >> /var/log/anbd/cable_issues.log"
+      - ssh {{ src_ip }} "echo success"
+
+  - type: firmware_update
+    description: Check and update NIC firmware if outdated
+    commands:
+      - ssh {{ src_ip }} "sudo ethtool -i eth0"
+      - ssh {{ src_ip }} "sudo apt-get update && sudo apt-get install -y linux-firmware"
+      - ssh {{ src_ip }} "sudo update-initramfs -u"
+      - ssh {{ src_ip }} "echo 'Firmware updated, reboot recommended' >> /var/log/anbd/firmware_updates.log"
+      - ssh {{ src_ip }} "echo success"

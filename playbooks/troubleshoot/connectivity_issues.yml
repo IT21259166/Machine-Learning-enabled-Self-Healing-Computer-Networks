@@ -1,0 +1,38 @@
+---
+# Connectivity Issues Troubleshooting Playbook
+name: connectivity_issues
+description: Playbook for detecting connectivity issues between hosts
+
+commands:
+  - ssh {{ src_ip }} "ping -c 5 {{ dst_ip }}"
+  - ssh {{ src_ip }} "traceroute {{ dst_ip }}"
+  - ssh {{ src_ip }} "nc -zv {{ dst_ip }} {{ dst_port }}"
+  - ssh {{ src_ip }} "ip route get {{ dst_ip }}"
+  - ssh {{ src_ip }} "iptables -L -n | grep {{ dst_ip }}"
+
+pattern: "100% packet loss|Destination Host Unreachable|Connection refused|No route to host|Connection timed out"
+
+threshold:
+  packet_loss: 80      # percent
+  unreachable_count: 3  # count
+
+actions:
+  - check_packet_loss:
+      description: Check if packet loss exceeds threshold
+      command: "grep -oP '[0-9]+(?=% packet loss)'"
+      threshold: "packet_loss"
+
+  - check_unreachable:
+      description: Check if host is unreachable
+      command: "grep -c 'Destination Host Unreachable'"
+      threshold: "unreachable_count"
+
+  - check_connection_refused:
+      description: Check if connection is refused
+      command: "grep -c 'Connection refused'"
+      threshold: "1"  # Any connection refused is an issue
+
+  - check_no_route:
+      description: Check if there is no route to host
+      command: "grep -c 'No route to host'"
+      threshold: "1"  # Any no route is an issue
